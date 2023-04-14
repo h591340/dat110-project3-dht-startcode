@@ -3,20 +3,18 @@
  */
 package no.hvl.dat110.chordoperations;
 
+import no.hvl.dat110.middleware.Message;
+import no.hvl.dat110.middleware.Node;
+import no.hvl.dat110.rpc.interfaces.NodeInterface;
+import no.hvl.dat110.util.Util;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.math.BigInteger;
 import java.rmi.RemoteException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import no.hvl.dat110.middleware.Message;
-import no.hvl.dat110.middleware.Node;
-import no.hvl.dat110.rpc.interfaces.NodeInterface;
-import no.hvl.dat110.util.Hash;
-import no.hvl.dat110.util.Util;
 
 /**
  * @author tdoy
@@ -43,8 +41,14 @@ public class ChordLookup {
 		// if logic returns false; call findHighestPredecessor(key)
 		
 		// do highest_pred.findSuccessor(key) - This is a recursive call until logic returns true
-				
-		return null;					
+		NodeInterface successor = node.getSuccessor();
+		if (Util.checkInterval(key, node.getNodeID().add(BigInteger.ONE), successor.getNodeID())) {
+			return successor;
+		} else {
+			NodeInterface highestPredecessor = findHighestPredecessor(key);
+			return highestPredecessor.findSuccessor(key);
+		}
+
 	}
 	
 	/**
@@ -64,8 +68,16 @@ public class ChordLookup {
 		// check that finger is a member of the set {nodeID+1,...,ID-1} i.e. (nodeID+1 <= finger <= key-1) using the ComputeLogic
 		
 		// if logic returns true, then return the finger (means finger is the closest to key)
+		List<NodeInterface> fingerTable = node.getFingerTable();
+		for (int i = fingerTable.size() - 1; i >= 0; i--) {
+			NodeInterface finger = fingerTable.get(i);
+			if (Util.checkInterval(finger.getNodeID(), node.getNodeID().add(BigInteger.ONE), ID.subtract(BigInteger.ONE))) {
+				return finger;
+			}
+		}
+		return (NodeInterface) node;
 		
-		return (NodeInterface) node;			
+
 	}
 	
 	public void copyKeysFromSuccessor(NodeInterface succ) {
